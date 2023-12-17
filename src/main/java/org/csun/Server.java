@@ -6,7 +6,7 @@ import org.csun.database.Database;
 import org.csun.database.impl.sqlite.SqliteDatabase;
 import org.csun.dto.AudioDetailsDto;
 
-import java.util.Objects;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class Server {
@@ -32,17 +32,14 @@ public class Server {
 
     private Server addRoutes() {
         app.post("api/insert", ctx -> {
-            String fileName = ctx.formParam("file_name");
-            double overallTempo = Double.parseDouble(Objects.requireNonNull(ctx.formParam("overall_tempo")));
-            double peakOne = Double.parseDouble(Objects.requireNonNull(ctx.formParam("peak_1")));
-            double peakTwo = Double.parseDouble(Objects.requireNonNull(ctx.formParam("peak_2")));
-
-            database.save(new AudioDetailsDto(fileName, overallTempo, peakOne, peakTwo))
-                    .thenApply(dto -> ctx.result("Received: " + dto));
+            AudioDetailsDto saved = database.save(ctx.bodyAsClass(AudioDetailsDto.class));
+            ctx.json(saved);
         });
 
-        app.get("api/get-audio-list", ctx -> database.fetchAllAudioDetails()
-                .thenApply(ctx::json));
+        app.get("api/get-audio-list", ctx -> {
+            List<AudioDetailsDto> fetchedList = database.fetchAllAudioDetails();
+            ctx.json(fetchedList);
+        });
 
         return this;
     }
